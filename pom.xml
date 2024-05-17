@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.edimilson</groupId>
-	<artifactId>literalura_app</artifactId>
+	<artifactId>literalura</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>literalura_app</name>
-	<description>Demo project for Spring Boot</description>
+	<name>literalura</name>
+	<description>Literalura projeto do Spring Boot</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>

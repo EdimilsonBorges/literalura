@@ -1,13 +1,13 @@
-package com.edimilson.literalura_app;
+package com.edimilson.literalura;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class LiteraluraAppApplication {
+public class LiteraluraApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(LiteraluraAppApplication.class, args);
+		SpringApplication.run(LiteraluraApplication.class, args);
 	}
 
 }
