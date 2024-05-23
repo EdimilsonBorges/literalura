@@ -46,6 +46,7 @@ public class Principal {
                     buscarLivro(nome);
                     break;
                 case "2":
+                    obterLivroRegistrado();
                     break;
                 case "3":
                     break;
@@ -112,6 +113,14 @@ public class Principal {
         DadosLivro dadosLivro = conversor.obterDados(json, DadosLivro.class);
         livros.add(dadosLivro);
         imprimirLivro(dadosLivro);
+    }
+
+    private void obterLivroRegistrado(){
+        if(livros.isEmpty()){
+            System.out.println("Não há livros registrados");
+            return;
+        }
+        livros.forEach(this::imprimirLivro);
     }
 
     private void imprimirLivro(DadosLivro dadosLivro){
