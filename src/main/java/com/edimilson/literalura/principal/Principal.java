@@ -1,26 +1,24 @@
 package com.edimilson.literalura.principal;
 
 import com.edimilson.literalura.model.DadosApi;
+import com.edimilson.literalura.model.DadosAutor;
 import com.edimilson.literalura.model.DadosLivro;
 import com.edimilson.literalura.service.ConsumoApi;
 import com.edimilson.literalura.service.ConverteDados;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Principal {
     private final String URL_BASE = "https://gutendex.com/books/";
     private final Scanner leitura = new Scanner(System.in);
     private final ConsumoApi consumoApi = new ConsumoApi();
     private final ConverteDados conversor = new ConverteDados();
-    private final List<DadosLivro> livros = new ArrayList<>();
+    private final Set<DadosLivro> livros = new HashSet<>();
+    private final Set<DadosAutor> autores = new HashSet<>();
 
     public void exibeMenu(){
 
-        boolean sair = false;
-
-        while (!sair){
+        while (true){
             String menu = """
                 ----------------------------------------------
                 Escolha um número de sua opção:
@@ -35,34 +33,26 @@ public class Principal {
             System.out.println(menu);
             String opcao = leitura.nextLine();
 
+            if(opcao.equals("0")){
+                System.out.println("Você saiu.");
+                break;
+            }
+
             switch (opcao){
-                case "0":
-                    sair = true;
-                    System.out.println("Você saiu.");
-                    break;
                 case "1":
-                    System.out.println("Insira o nome do livro que você deseja procurar");
-                    String nome = leitura.nextLine();
-                    buscarLivro(nome);
+                    buscarLivro();
                     break;
                 case "2":
-                    obterLivroRegistrado();
+                    listarLivrosRegistrados();
                     break;
                 case "3":
+                    listarAutoresRegistrados();
                     break;
                 case "4":
-                    System.out.println("Insira o ano que deseja pesquisar");
+                    listarAutorVivoEmDeterminadoAno();
                     break;
                 case "5":
-                    String menuIdioma = """
-                            
-                            Insira o idioma para realizar a busca:
-                            es- Espanhou
-                            en- Inglês
-                            fr- Francês
-                            pt- Português
-                            """;
-                    System.out.println(menuIdioma);
+                    listarLivrosEmDeterminadoIdioma();
                     break;
                 default:
                     System.out.println("Opção inválida digite de 0 a 5");
@@ -70,7 +60,21 @@ public class Principal {
         }
     }
 
-    private void buscarLivro(String nome) {
+    private boolean isAnoValidado(String anoLido) {
+        if(anoLido.length() == 4){
+            try {
+                Integer.parseInt(anoLido);
+                return true;
+            }catch (Exception e){
+                return false;
+            }
+        }
+       return false;
+    }
+
+    private void buscarLivro() {
+        System.out.println("Insira o nome do livro que você deseja procurar");
+        String nome = leitura.nextLine();
         System.out.println("Buscando, aguarde...");
 		String json = consumoApi.obterDados(URL_BASE + "?search=" + nome.replace(" ", "%20"));
 		DadosApi dadosApi = conversor.obterDados(json, DadosApi.class);
@@ -112,10 +116,17 @@ public class Principal {
         String json = consumoApi.obterDados(URL_BASE + dadosApi.livros().get(index).id() + "/");
         DadosLivro dadosLivro = conversor.obterDados(json, DadosLivro.class);
         livros.add(dadosLivro);
+        if( !dadosLivro.autor().isEmpty() &&
+                !dadosLivro.autor().getFirst().nome().equalsIgnoreCase("Anonymous") &&
+                !dadosLivro.autor().getFirst().nome().equalsIgnoreCase("Unknown") &&
+                !dadosLivro.autor().getFirst().nome().equalsIgnoreCase("Various")){
+
+            autores.add(dadosLivro.autor().getFirst());
+        }
         imprimirLivro(dadosLivro);
     }
 
-    private void obterLivroRegistrado(){
+    private void listarLivrosRegistrados(){
         if(livros.isEmpty()){
             System.out.println("Não há livros registrados");
             return;
@@ -123,8 +134,67 @@ public class Principal {
         livros.forEach(this::imprimirLivro);
     }
 
+    private void listarAutoresRegistrados(){
+        if(autores.isEmpty()){
+            System.out.println("Não há autores registrados");
+            return;
+        }
+        autores.forEach(this::imprimirAutor);
+    }
+
+    private void listarAutorVivoEmDeterminadoAno() {
+
+        System.out.println("Insira o ano que deseja pesquisar");
+        String anoLido = leitura.nextLine();
+
+        if(isAnoValidado(anoLido)){
+            List<DadosAutor> autoresEncontrados = autores.stream()
+                    .filter(a -> a.anoNascimento() != null && a.anoFalecimento() != null &&  a.anoNascimento() < Integer.parseInt(anoLido) && a.anoFalecimento() >  Integer.parseInt(anoLido))
+                    .toList();
+
+            if(autoresEncontrados.isEmpty()){
+                System.out.println("Não foram encontrados autores cadastrados vivos entre esse periodo");
+                return;
+            }
+            autoresEncontrados.forEach(this::imprimirAutor);
+        }else{
+            System.out.println("Ano inválido, digite 4 números ex: 1930");
+        }
+    }
+    private void listarLivrosEmDeterminadoIdioma() {
+
+        String menuIdioma = """
+                            
+                            Insira o idioma para realizar a busca:
+                            es- Espanhou
+                            en- Inglês
+                            fr- Francês
+                            pt- Português
+                            """;
+        System.out.println(menuIdioma);
+        String idioma = leitura.nextLine();
+
+        if(!idioma.equalsIgnoreCase("es") &&
+                !idioma.equalsIgnoreCase("en") &&
+                !idioma.equalsIgnoreCase("fr") &&
+                !idioma.equalsIgnoreCase("pt")){
+
+            System.out.println("Opção inválida, São aceitos apenas os idiomas (es), (en), (fr) ou (pt)");
+            return;
+        }
+        List<DadosLivro> livrosFiltrados = livros.stream()
+                .filter(l -> l.idioma().getFirst().equalsIgnoreCase(idioma))
+                .toList();
+
+        if(livrosFiltrados.isEmpty()){
+            System.out.println("Não foram encontrados livros neste idioma");
+            return;
+        }
+        livrosFiltrados.forEach(this::imprimirLivro);
+    }
+
     private void imprimirLivro(DadosLivro dadosLivro){
-        String autor = !dadosLivro.autor().isEmpty() ? String.valueOf(dadosLivro.autor().getFirst().nome()) : "Autor desconhecido";
+        String nomeAutor = !dadosLivro.autor().isEmpty() ? String.valueOf(dadosLivro.autor().getFirst().nome()) : "Autor desconhecido";
         String livro = String.format("""
                 --------------------------------
                 Titulo: %s
@@ -132,7 +202,19 @@ public class Principal {
                 Idioma: %s
                 Número de Downloads: %s
                 --------------------------------
-                """, dadosLivro.titulo(), autor, dadosLivro.idioma().getFirst(),dadosLivro.numeroDownloads());
+                """, dadosLivro.titulo(), nomeAutor, dadosLivro.idioma().getFirst(),dadosLivro.numeroDownloads());
         System.out.println(livro);
+    }
+
+    private void imprimirAutor(DadosAutor dadosAutor){
+        String nomeAutor = !dadosAutor.nome().isEmpty() ? dadosAutor.nome() : "Autor desconhecido";
+        String autor = String.format("""
+                --------------------------------
+                Autor: %s
+                Ano de nascimento: %s
+                Ano de falecimento: %s
+                --------------------------------
+                """, nomeAutor, dadosAutor.anoNascimento(),dadosAutor.anoFalecimento());
+        System.out.println(autor);
     }
 }
