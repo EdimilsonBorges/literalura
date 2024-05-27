@@ -1,20 +1,30 @@
 package com.edimilson.literalura.principal;
 
-import com.edimilson.literalura.model.DadosApi;
-import com.edimilson.literalura.model.DadosAutor;
-import com.edimilson.literalura.model.DadosLivro;
+import com.edimilson.literalura.model.*;
+import com.edimilson.literalura.repository.AutorRepository;
+import com.edimilson.literalura.repository.LivroRepository;
 import com.edimilson.literalura.service.ConsumoApi;
 import com.edimilson.literalura.service.ConverteDados;
+import jakarta.transaction.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Principal {
     private final String URL_BASE = "https://gutendex.com/books/";
     private final Scanner leitura = new Scanner(System.in);
     private final ConsumoApi consumoApi = new ConsumoApi();
     private final ConverteDados conversor = new ConverteDados();
-    private final Set<DadosLivro> livros = new HashSet<>();
-    private final Set<DadosAutor> autores = new HashSet<>();
+    private List<Livro> livros = new ArrayList<>();
+    private Set<Autor> autores = new HashSet<>();
+    private LivroRepository livroRepository;
+
+    private AutorRepository autorRepository;
+
+    public Principal(LivroRepository livroRepository, AutorRepository autorRepository){
+        this.livroRepository = livroRepository;
+        this.autorRepository = autorRepository;
+    }
 
     public void exibeMenu(){
 
@@ -82,7 +92,7 @@ public class Principal {
         if(dadosApi.quantidade() == 0){
             System.out.println("Não foram encontrado livros nessa pesquisa");
         }else if(dadosApi.quantidade() == 1){
-            obterLivro(dadosApi, 0);
+            obterLivro(dadosApi);
         }else {
             System.out.println("Foram encontrado " + dadosApi.quantidade() + " livros nessa pesquisa, deseja ver todos esses livros? (S/N)");
             String opcao = leitura.nextLine();
@@ -93,45 +103,55 @@ public class Principal {
     }
 
     private void percorrerLivros(DadosApi dadosApi){
-        int proximo = dadosApi.livros().size();
+        boolean proximo = true;
         String json;
-        int index = 0;
 
         for(int i = 1; i <= dadosApi.quantidade(); i++){
-            if( i <= proximo ){
-                obterLivro(dadosApi, index);
-                index++;
+            if(proximo){
+                proximo = false;
+                obterLivro(dadosApi);
+            }else if(dadosApi.proximo() == null){
+                break;
             }else{
-                proximo += dadosApi.livros().size();
+                System.out.println("Buscando, aguarde...");
                 json = consumoApi.obterDados(dadosApi.proximo());
                 dadosApi = conversor.obterDados(json, DadosApi.class);
-                index = 0;
-                obterLivro(dadosApi, index);
-                index++;
+                obterLivro(dadosApi);
             }
         }
     }
+    private void obterLivro(DadosApi dadosApi) {
 
-    private void obterLivro(DadosApi dadosApi, int index) {
-        String json = consumoApi.obterDados(URL_BASE + dadosApi.livros().get(index).id() + "/");
-        DadosLivro dadosLivro = conversor.obterDados(json, DadosLivro.class);
-        livros.add(dadosLivro);
-        if( !dadosLivro.autor().isEmpty() &&
-                !dadosLivro.autor().getFirst().nome().equalsIgnoreCase("Anonymous") &&
-                !dadosLivro.autor().getFirst().nome().equalsIgnoreCase("Unknown") &&
-                !dadosLivro.autor().getFirst().nome().equalsIgnoreCase("Various")){
+        List<Autor> autores = dadosApi.livros().stream()
+                .flatMap(l -> l.autores().stream())
+                .map(a -> new Autor(new DadosAutor(a.getNome(), a.getAnoNascimento(), a.getAnoFalecimento())))
+                .toList();
 
-            autores.add(dadosLivro.autor().getFirst());
-        }
-        imprimirLivro(dadosLivro);
+        Set<Livro> livros = dadosApi.livros().stream()
+                .map(l -> {
+                    List<Autor> livroAutores = l.autores().stream()
+                            .map(a -> autores.stream()
+                                    .filter(existingAutor -> existingAutor.getNome().equals(a.getNome()))
+                                    .findFirst()
+                                    .orElseThrow(() -> new IllegalArgumentException("Autor não encontrado: " + a.getNome())))
+                            .collect(Collectors.toList());
+                    Livro livro = new Livro(new DadosLivro(l.titulo(), l.idioma(), livroAutores, l.numeroDownloads()));
+                    livro.setAutores(livroAutores);
+                    return livro;
+                })
+                .collect(Collectors.toSet());
+
+        livroRepository.saveAll(livros);
+        livros.forEach(System.out::println);
     }
 
     private void listarLivrosRegistrados(){
+        livros =  livroRepository.findAll();
         if(livros.isEmpty()){
             System.out.println("Não há livros registrados");
             return;
         }
-        livros.forEach(this::imprimirLivro);
+        livros.forEach(System.out::println);
     }
 
     private void listarAutoresRegistrados(){
@@ -139,7 +159,7 @@ public class Principal {
             System.out.println("Não há autores registrados");
             return;
         }
-        autores.forEach(this::imprimirAutor);
+        autores.forEach(System.out::println);
     }
 
     private void listarAutorVivoEmDeterminadoAno() {
@@ -148,15 +168,15 @@ public class Principal {
         String anoLido = leitura.nextLine();
 
         if(isAnoValidado(anoLido)){
-            List<DadosAutor> autoresEncontrados = autores.stream()
-                    .filter(a -> a.anoNascimento() != null && a.anoFalecimento() != null &&  a.anoNascimento() < Integer.parseInt(anoLido) && a.anoFalecimento() >  Integer.parseInt(anoLido))
+            List<Autor> autoresEncontrados = autores.stream()
+                    .filter(a -> a.getAnoNascimento() != null && a.getAnoFalecimento() != null &&  a.getAnoNascimento() < Integer.parseInt(anoLido) && a.getAnoFalecimento() >  Integer.parseInt(anoLido))
                     .toList();
 
             if(autoresEncontrados.isEmpty()){
                 System.out.println("Não foram encontrados autores cadastrados vivos entre esse periodo");
                 return;
             }
-            autoresEncontrados.forEach(this::imprimirAutor);
+            autoresEncontrados.forEach(System.out::println);
         }else{
             System.out.println("Ano inválido, digite 4 números ex: 1930");
         }
@@ -182,39 +202,15 @@ public class Principal {
             System.out.println("Opção inválida, São aceitos apenas os idiomas (es), (en), (fr) ou (pt)");
             return;
         }
-        List<DadosLivro> livrosFiltrados = livros.stream()
-                .filter(l -> l.idioma().getFirst().equalsIgnoreCase(idioma))
+        List<Livro> livrosFiltrados = livros.stream()
+                .filter(l -> l.getIdioma().equalsIgnoreCase(idioma))
                 .toList();
 
         if(livrosFiltrados.isEmpty()){
             System.out.println("Não foram encontrados livros neste idioma");
             return;
         }
-        livrosFiltrados.forEach(this::imprimirLivro);
+        livrosFiltrados.forEach(System.out::println);
     }
 
-    private void imprimirLivro(DadosLivro dadosLivro){
-        String nomeAutor = !dadosLivro.autor().isEmpty() ? String.valueOf(dadosLivro.autor().getFirst().nome()) : "Autor desconhecido";
-        String livro = String.format("""
-                --------------------------------
-                Titulo: %s
-                Autor: %s
-                Idioma: %s
-                Número de Downloads: %s
-                --------------------------------
-                """, dadosLivro.titulo(), nomeAutor, dadosLivro.idioma().getFirst(),dadosLivro.numeroDownloads());
-        System.out.println(livro);
-    }
-
-    private void imprimirAutor(DadosAutor dadosAutor){
-        String nomeAutor = !dadosAutor.nome().isEmpty() ? dadosAutor.nome() : "Autor desconhecido";
-        String autor = String.format("""
-                --------------------------------
-                Autor: %s
-                Ano de nascimento: %s
-                Ano de falecimento: %s
-                --------------------------------
-                """, nomeAutor, dadosAutor.anoNascimento(),dadosAutor.anoFalecimento());
-        System.out.println(autor);
-    }
 }
