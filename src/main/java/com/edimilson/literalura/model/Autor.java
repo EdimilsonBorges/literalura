@@ -15,14 +15,15 @@ public class Autor {
     private Integer anoFalecimento;
     @ManyToOne
     private Livro livro;
-    public Autor(DadosAutor dadosAutor){
-        this.nome  = !dadosAutor.nome().isEmpty() ? dadosAutor.nome() : "Autor desconhecido";
+
+    public Autor(DadosAutor dadosAutor) {
+        this.nome = !dadosAutor.nome().isEmpty() ? dadosAutor.nome() : "Autor desconhecido";
         this.anoNascimento = dadosAutor.anoNascimento();
         this.anoFalecimento = dadosAutor.anoFalecimento();
     }
 
 
-    public Autor(){
+    public Autor() {
 
     }
 
@@ -74,7 +75,7 @@ public class Autor {
                 Ano de nascimento: %s
                 Ano de falecimento: %s
                 --------------------------------
-                """, getNome(), getAnoNascimento(),getAnoFalecimento());
+                """, getNome(), getAnoNascimento(), getAnoFalecimento());
     }
 }
 

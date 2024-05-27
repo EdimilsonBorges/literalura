@@ -10,19 +10,19 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class LiteraluraApplication implements CommandLineRunner {
-	@Autowired
-	LivroRepository livroRepository;
+    @Autowired
+    LivroRepository livroRepository;
 
-	@Autowired
-	AutorRepository autorRepository;
+    @Autowired
+    AutorRepository autorRepository;
 
-	public static void main(String[] args) {
-		SpringApplication.run(LiteraluraApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(LiteraluraApplication.class, args);
+    }
 
-	@Override
-	public void run(String... args) {
-		Principal principal = new Principal(livroRepository, autorRepository);
-		principal.exibeMenu();
-	}
+    @Override
+    public void run(String... args) {
+        Principal principal = new Principal(livroRepository, autorRepository);
+        principal.exibeMenu();
+    }
 }

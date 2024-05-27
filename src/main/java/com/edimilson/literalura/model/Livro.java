@@ -1,6 +1,7 @@
 package com.edimilson.literalura.model;
 
 import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,13 +19,13 @@ public class Livro {
     @OneToMany(mappedBy = "livro", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Autor> autores = new ArrayList<>();
 
-    public Livro(DadosLivro dadosLivro){
+    public Livro(DadosLivro dadosLivro) {
         this.titulo = dadosLivro.titulo();
         this.idioma = dadosLivro.idioma().getFirst();
         this.numeroDownloads = dadosLivro.numeroDownloads();
     }
 
-    public Livro(){
+    public Livro() {
 
     }
 
