@@ -16,7 +16,6 @@ public class Principal {
     private final ConsumoApi consumoApi = new ConsumoApi();
     private final ConverteDados conversor = new ConverteDados();
     private List<Livro> livros = new ArrayList<>();
-    private Set<Autor> autores = new HashSet<>();
     private LivroRepository livroRepository;
 
     private AutorRepository autorRepository;
@@ -97,12 +96,12 @@ public class Principal {
             System.out.println("Foram encontrado " + dadosApi.quantidade() + " livros nessa pesquisa, deseja ver todos esses livros? (S/N)");
             String opcao = leitura.nextLine();
             if(opcao.equalsIgnoreCase("s")){
-                percorrerLivros(dadosApi);
+                obterTodosLivros(dadosApi);
             }
         }
     }
 
-    private void percorrerLivros(DadosApi dadosApi){
+    private void obterTodosLivros(DadosApi dadosApi){
         boolean proximo = true;
         String json;
 
@@ -155,6 +154,7 @@ public class Principal {
     }
 
     private void listarAutoresRegistrados(){
+        List<Autor> autores = autorRepository.findAll();
         if(autores.isEmpty()){
             System.out.println("Não há autores registrados");
             return;
@@ -168,15 +168,12 @@ public class Principal {
         String anoLido = leitura.nextLine();
 
         if(isAnoValidado(anoLido)){
-            List<Autor> autoresEncontrados = autores.stream()
-                    .filter(a -> a.getAnoNascimento() != null && a.getAnoFalecimento() != null &&  a.getAnoNascimento() < Integer.parseInt(anoLido) && a.getAnoFalecimento() >  Integer.parseInt(anoLido))
-                    .toList();
-
-            if(autoresEncontrados.isEmpty()){
+            List<Autor> autores = autorRepository.listaAutoresVivosEmDeterminadoAno(Integer.parseInt(anoLido));
+            if(autores.isEmpty()){
                 System.out.println("Não foram encontrados autores cadastrados vivos entre esse periodo");
                 return;
             }
-            autoresEncontrados.forEach(System.out::println);
+            autores.forEach(System.out::println);
         }else{
             System.out.println("Ano inválido, digite 4 números ex: 1930");
         }
