@@ -15,10 +15,8 @@ public class Principal {
     private final Scanner leitura = new Scanner(System.in);
     private final ConsumoApi consumoApi = new ConsumoApi();
     private final ConverteDados conversor = new ConverteDados();
-    private List<Livro> livros = new ArrayList<>();
-    private LivroRepository livroRepository;
-
-    private AutorRepository autorRepository;
+    private final LivroRepository livroRepository;
+    private final AutorRepository autorRepository;
 
     public Principal(LivroRepository livroRepository, AutorRepository autorRepository){
         this.livroRepository = livroRepository;
@@ -123,18 +121,18 @@ public class Principal {
 
         List<Autor> autores = dadosApi.livros().stream()
                 .flatMap(l -> l.autores().stream())
-                .map(a -> new Autor(new DadosAutor(a.getNome(), a.getAnoNascimento(), a.getAnoFalecimento())))
+                .map(Autor::new)
                 .toList();
 
         Set<Livro> livros = dadosApi.livros().stream()
                 .map(l -> {
                     List<Autor> livroAutores = l.autores().stream()
                             .map(a -> autores.stream()
-                                    .filter(existingAutor -> existingAutor.getNome().equals(a.getNome()))
+                                    .filter(existingAutor -> existingAutor.getNome().equals(a.nome()))
                                     .findFirst()
-                                    .orElseThrow(() -> new IllegalArgumentException("Autor não encontrado: " + a.getNome())))
+                                    .orElseThrow(() -> new IllegalArgumentException("Autor não encontrado: " + a.nome())))
                             .collect(Collectors.toList());
-                    Livro livro = new Livro(new DadosLivro(l.titulo(), l.idioma(), livroAutores, l.numeroDownloads()));
+                    Livro livro = new Livro(new DadosLivro(l.titulo(), l.idioma(), l.autores(), l.numeroDownloads()));
                     livro.setAutores(livroAutores);
                     return livro;
                 })
@@ -145,7 +143,7 @@ public class Principal {
     }
 
     private void listarLivrosRegistrados(){
-        livros =  livroRepository.findAll();
+        List<Livro> livros =  livroRepository.findAll();
         if(livros.isEmpty()){
             System.out.println("Não há livros registrados");
             return;
@@ -168,12 +166,12 @@ public class Principal {
         String anoLido = leitura.nextLine();
 
         if(isAnoValidado(anoLido)){
-            List<Autor> autores = autorRepository.listaAutoresVivosEmDeterminadoAno(Integer.parseInt(anoLido));
-            if(autores.isEmpty()){
+            List<Autor> autoresFiltados = autorRepository.listaAutoresVivosEmDeterminadoAno(Integer.parseInt(anoLido));
+            if(autoresFiltados.isEmpty()){
                 System.out.println("Não foram encontrados autores cadastrados vivos entre esse periodo");
                 return;
             }
-            autores.forEach(System.out::println);
+            autoresFiltados.forEach(System.out::println);
         }else{
             System.out.println("Ano inválido, digite 4 números ex: 1930");
         }
@@ -199,9 +197,7 @@ public class Principal {
             System.out.println("Opção inválida, São aceitos apenas os idiomas (es), (en), (fr) ou (pt)");
             return;
         }
-        List<Livro> livrosFiltrados = livros.stream()
-                .filter(l -> l.getIdioma().equalsIgnoreCase(idioma))
-                .toList();
+        List<Livro> livrosFiltrados = livroRepository.livrosEmDeterminadoIdioma(idioma);
 
         if(livrosFiltrados.isEmpty()){
             System.out.println("Não foram encontrados livros neste idioma");

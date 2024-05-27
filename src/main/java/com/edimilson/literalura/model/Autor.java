@@ -10,11 +10,8 @@ public class Autor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @JsonProperty("name")
     private String nome;
-    @JsonProperty("birth_year")
     private Integer anoNascimento;
-    @JsonProperty("death_year")
     private Integer anoFalecimento;
     @ManyToOne
     private Livro livro;
