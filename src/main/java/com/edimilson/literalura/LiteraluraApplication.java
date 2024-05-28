@@ -1,8 +1,8 @@
 package com.edimilson.literalura;
 
 import com.edimilson.literalura.principal.Principal;
-import com.edimilson.literalura.repository.AutorRepository;
-import com.edimilson.literalura.repository.LivroRepository;
+import com.edimilson.literalura.service.AutorService;
+import com.edimilson.literalura.service.LivroService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -11,10 +11,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class LiteraluraApplication implements CommandLineRunner {
     @Autowired
-    LivroRepository livroRepository;
-
+    LivroService livroService;
     @Autowired
-    AutorRepository autorRepository;
+    AutorService autorService;
 
     public static void main(String[] args) {
         SpringApplication.run(LiteraluraApplication.class, args);
@@ -22,7 +21,7 @@ public class LiteraluraApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        Principal principal = new Principal(livroRepository, autorRepository);
+        Principal principal = new Principal(livroService, autorService);
         principal.exibeMenu();
     }
 }
