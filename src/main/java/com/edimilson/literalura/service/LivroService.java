@@ -1,19 +1,13 @@
 package com.edimilson.literalura.service;
 
-import com.edimilson.literalura.model.Autor;
-import com.edimilson.literalura.model.DadosApi;
-import com.edimilson.literalura.model.DadosLivro;
-import com.edimilson.literalura.model.Livro;
-import com.edimilson.literalura.repository.AutorRepository;
+import com.edimilson.literalura.model.*;
 import com.edimilson.literalura.repository.LivroRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,9 +51,10 @@ public class LivroService {
                 livroRepository.save(livro);
                 System.out.println(livro);
             } catch (DataIntegrityViolationException e) {
-                System.err.printf("Erro ao salvar livro, este livro já existe no banco de dados \n %s",livro);
-            }catch (InvalidDataAccessApiUsageException e){
-                System.err.printf("Erro. Entidade desanexada passada para persistir \n %s", livro);
+                System.out.println(livro);
+                System.err.println("Erro ao salvar o livro "+livro.getTitulo()+", este livro já existe no banco de dados.");
+            } catch (InvalidDataAccessApiUsageException e) {
+                System.err.println("Erro. Entidade desanexada passada para persistir.");
             }
         });
 
@@ -85,12 +80,21 @@ public class LivroService {
     }
 
     public void listarLivrosRegistrados() {
+        System.out.println("Buscando, aguarde...");
         List<Livro> livros = livroRepository.findAll();
         if (livros.isEmpty()) {
             System.out.println("Não há livros registrados");
             return;
         }
-        livros.forEach(System.out::println);
+        if (livros.size() <= 3) {
+            livros.forEach(System.out::println);
+        } else {
+            System.out.println("Foram encontrado " + livros.size() + " livros no banco de dados deseja ver todos esses livros? (S/N)");
+            String opcao = leitura.nextLine();
+            if (opcao.equalsIgnoreCase("s")) {
+                livros.forEach(System.out::println);
+            }
+        }
     }
 
     public void listarLivrosEmDeterminadoIdioma() {
