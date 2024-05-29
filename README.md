@@ -23,15 +23,11 @@ O LiterAlura é um projeto desenvolvido como parte do desafio proposto pela parc
 ## ▶ Como Usar
 - Instale o PostgreSQL na máquina
 - Crie uma um banco de dados no PostgreSQL com o nome ```literalura_livros```
-
-
 - Configure as variáveis de ambiente no seu sistema operacional
 - ```DB_HOST``` com o valor ```localhost```
 - ```DB_NAME``` com o valor ```literalura_livros```
 - ```DB_PASSWORD``` com o valor de sua senha do banco do PostgreSQL
 - ```DB_USER``` com o valor do seu usuário do banco do PostgreSQL
-
-
 - Instale o IntelliJ IDEA e rode o projeto
 ## 🛠️ Tecnologias utilizadas
 - [Java](https://www.java.com/pt-BR/) -  Linguagem de programação
