@@ -55,9 +55,11 @@ public class AutorService {
     public void listarAutorPorNome() {
         System.out.println("Qual é o nome do autor que você deseja pesquisar?");
         String nome = leitura.nextLine();
-        List<Autor> autor = autorRepository.listarAutorPorNome(nome);
-        if (!autor.isEmpty()) {
-            autor.forEach(System.out::println);
+        List<Autor> autores = autorRepository.listarAutorPorNome(nome);
+        if (!autores.isEmpty()) {
+            autores.stream()
+                    .distinct()
+                    .forEach(System.out::println);
         } else {
             System.out.println("Autor não encontrado no Banco de Dados.");
         }

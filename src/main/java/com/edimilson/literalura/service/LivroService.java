@@ -43,8 +43,14 @@ public class LivroService {
 
         List<Autor> autores = dadosApi.livros().stream().flatMap(l -> l.autores().stream()).map(Autor::new).toList();
 
-        dadosApi.livros().forEach(l -> {
-            List<Autor> livroAutores = l.autores().stream().map(a -> autores.stream().filter(existingAutor -> existingAutor.getNome().equals(a.nome())).findFirst().orElseThrow(() -> new IllegalArgumentException("Autor não encontrado: " + a.nome()))).collect(Collectors.toList());
+        dadosApi.livros().stream()
+                .distinct()
+                .forEach(l -> {
+            List<Autor> livroAutores = l.autores().stream()
+                    .map(a -> autores.stream()
+                            .filter(existingAutor -> existingAutor.getNome().equals(a.nome()))
+                            .findFirst().orElseThrow(() -> new IllegalArgumentException("Autor não encontrado: " + a.nome())))
+                    .collect(Collectors.toList());
             Livro livro = new Livro(new DadosLivro(l.titulo(), l.idioma(), l.autores(), l.numeroDownloads()));
             livro.setAutores(livroAutores);
             try {
